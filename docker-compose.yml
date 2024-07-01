@@ -1,0 +1,48 @@
+version: "3.9"
+
+volumes:
+  db-data: {}
+  test-db-data: {}
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    ports:
+      - 5432:5432
+    expose:
+      - "5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data:cached
+
+  test-postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    ports:
+      - 5434:5432
+    expose:
+      - "5434"
+    volumes:
+      - test-db-data:/var/lib/postgresql/data:cached
+
+  billing_service_api:
+    build: .
+    volumes:
+      - ./app:/home/billing_service_api/app
+      - ./tests:/home/billing_service_api/tests
+      - ./alembic:/home/billing_service_api/alembic
+    environment:
+      - DATABASE_URL
+    depends_on:
+      - "postgres"
+    command: ["/home/billing_service_api/bin/entrypoint"]
+    ports:
+      - "8000:8000"
